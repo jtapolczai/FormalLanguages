@@ -1,0 +1,706 @@
+\documentclass[]{scrartcl}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+
+
+%opening
+\title{Automaten und Formale Sprachen - Übung}
+\author{Janos Tapolczai}
+
+\newcommand{\matr}[2]{\left(\begin{array}{#1}#2\end{array}\right)}
+\newcommand{\e}{\varepsilon}
+\newcommand{\mt}[1]{\textnormal{#1}}
+\newcommand{\grule}[2]{#1 \rightarrow #2}
+\newcommand{\grammar}[4]{(#1,#2,#3,#4)}
+\renewcommand{\choose}[2]{\left(\begin{array}{c}#1\\#2\end{array}\right)}
+
+\begin{document}
+
+\maketitle
+
+
+\section{Welche der folgenden Gleichungen gelten für beliebige Sprachen $L_1$, $L_2$, $L_3$? Begründen Sie Ihre Antworten.}
+
+\begin{enumerate}
+	\item $L_1(L_2 \cup L_3) = L_1L_2 \cup L_1L_3$\\
+		Wahr. Konkatenation distributiert über Vereinigung. 
+	\item $L_1(L_2 \cap L_3) = L_1L_2 \cap L_1L_3$\\
+		Falsch. Gegenbeispiel: $l = w_1w_2 = w_1'w_3$ mit $w_1,w_1' \in L_1, w_2 \in L_2, w_3 \in L_3$.
+	\item $L_1^* = (L_1^*)^*$\\
+		Wahr. $^*$ ist --- da die Hülle bez. Konkatenation --- idempotent. Sei $l_x \in (L_1^*)^*$. Es gilt: $l_x = l_1l_2\dots l_n$ mit $l_i \in L_1^*$ und $l_i$ ist endlich lang. $L_1^* = \bigcup_{i \geq 0} L_1^i$, was impliziert, dass $L_1^* \supset L_1^{\Sigma_{1 \leq j \leq n} \texttt{\footnotesize length}(l_j)} \ni l_x$.
+	\item $(L_1 \cup L_2)^* = L_1^*(L_2L_1^*)^*$\\
+		Wahr.
+		Informell gesprochen besteht ein Wort $l_x \in (L_1 \cup L_2)^*$ aus Abschnitten aus $L_1$ und aus $L_2$, d.h. $l_x=(l_1\dots l_1)(l_2\dots l_2)\dots$, wobei jeder Abschnitt aus einer endlichen Anzahl (inkl. 0) von Worten besteht. $L_1^*(L_2L_1^*)*$ is mind. genauso mächtig: $L_1^*$ produziert den ersten Abschnitt, während $(L_2L_1^*)*$ die nachfolgenden Abschnitte $(l_2\dots l_2)(l_1\dots l_1)$ produziert. Umgekehrt kann $(L_1 \cup L_2)^*$ natürlich jedes Wort der Sprache $L_1^*(L_2L_1^*)^*$ produzieren, da $(L_1 \cup L_2)^*$ alle Kombinationen der Worte aus $L_1$ und $L_2$ enthält.
+\end{enumerate}
+
+\setcounter{section}{1}
+
+\section{Konstruieren Sie reguläre Grammatiken, die folgende Sprachen erzeugen:}
+
+Die angeführten Grammatiken sind direkte Übersetzungen der Lösungen in Aufgabe 8.
+
+Um Platz zu sparen, benutzen wir die Notation $\grule{N}{(T_1 + \dots + T_n)}$ als Makro für die Regeln $(\grule{N}{T_1}),\dots,(\grule{N}{T_n})$.
+
+\begin{enumerate}
+	\item $\{w \in \{ a,b \}^*\ |\ aa \textnormal{ tritt nicht als Teilwort von } w \textnormal{ auf } \}$.\\
+	
+	$G_1 = (N_1,T_1,S_1,P_1) = (\{S,A\}, \{a,b\}, S, \{ \grule{S}{\e + bS + aA},\
+														\grule{A}{\e + bS}\})$
+	
+	\item $\{w \in \{ a,b,c \}^*\ |\ n_c(w) \geq 2 \}$.\\
+	
+	$
+		\begin{array}{l l}
+			G_2 = (N_2,T_2,S_2,P_2) = (\{C_0,C_1,C_2\}, \{a,b,c\}, C_0, \{
+				& \grule{C_0}{aC_0 + bC_0 + cC_1},\\
+			    & \grule{C_1}{aC_1 + bC_1 + cC_2},\\
+				& \grule{C_2}{aC_2+bC_2+cC_2+\e}\
+				\})
+		\end{array}
+	$
+	
+	\item $\{w \in \{ a,b \}^*\ |\ 3\ |\ n_b(w) \}$.\\
+	
+	$
+		\begin{array}{l l}
+			G_3 = (N_3,T_3,S_3,P_3) = (\{B_0,B_1,B_2\}, \{a,b\}, B_0, \{
+				& \grule{B_0}{aB_0 + bB_1 + \e},\\
+			    & \grule{B_1}{aB_1 + bB_2},\\
+				& \grule{B_2}{aB_2+bB_0}\
+				\})
+		\end{array}
+	$\\
+\end{enumerate}
+
+\newpage
+
+\section{Konstruieren Sie kontextfreie Grammatiken, die folgende Sprachen erzeugen:}
+
+\begin{enumerate}
+	\item $\{a^ib^j\ |\ i,j \in \mathbb{N}, i \geq j \}$.\\
+		
+	$ G_1 = (N_1,T_1,S_1,P_1) = (\{S,A\}, \{a,b\}, S, \{ \grule{S}{ASb + \e}, \grule{A}{a + aA}\})
+	$
+	
+	Wir können $i \geq j$ garantieren, indem wir bei jeder Erhöhung von $j$ auch $i$ erhöhen ($\grule{S}{ASb}$). Da $i$ aber auch größer als $j$ sein kann, führen wir noch die Produktion $\grule{A}{aA}$ ein, um beliebig viele weitere $a$ erzeugen zu können.
+	
+	\item $\{a^ib^jc^{2i+3j}\ |\ i,j \in \mathbb{N} \}$.\\
+	
+	$G_1 = (N_1,T_1,S_1,P_1) = (\{A,B\}, \{a,b\}, A, \{ \grule{A}{aAcc + B}, \grule{B}{bBccc + \e}\})$
+	
+	Obwohl die Sprache Ähnlichkeit mit der nicht-kontextfreien $\{a^ib^ic^i\ |\ i \in \mathbb{N} \}$ hat, ist dort ein Constraint über drei Variablen am Werk (die Längen der $a$-, $b$- und $c$-Segmente müssen gleich sein), während es bei diesem Beispiel {\em zwei} Constraints über jeweils {\em zwei} Variablen gibt: (1) für jedes $a$ müssen 2 $c$ und (2) für jedes $b$ müssen 3 $c$ erzeugt werden. Diese beiden Einschränkunen lassen sich durch die Produktionen $\grule{A}{aAccc}$ und $\grule{B}{bBccc}$ abbilden. Die Produktion $\grule{A}{B}$ ermöglicht dann noch den Übergang vom $a$-Segment ins $b$-Segment eines Wortes.
+
+	\item $\{w \in \{a,b\}^* |\ w = w^R \}$.\\
+	
+	$G_3 = (N_3,T_3,S_3,P_3) = (\{S,A,B\}, \{a,b\}, S, \{\grule{S}{a + b + aSa + bSb + \e}\})$
+	
+	Es ist die Menge der Palindrome über $\{a,b\}$ gefragt. Man kann sich leicht überlegen, dass Palindrome in ihrer Mitte gespiegelt sind, sodass wir mit den Produktionen von $G_3$ einfach zwei ``Spiegelbilder'' erzeugen müssen --- von dieser Überlegung her rühren die Produktionen $\grule{S}{aSa}$ und $\grule{S}{bSb}$. $\grule{S}{a}$ und $\grule{S}{b}$ sind zusätzlich da, um die Konstruktion von Palindromen ungerader Länge zu ermöglichen.
+\end{enumerate}
+
+
+\setcounter{section}{4}
+
+\section{Bestimmen Sie die Koeffizienten der Wörter in $\{a,b\}^*$, die bei folgenden Potenzreihen auftreten. Die zugrundeliegenden Halbringe sind jeweils angegeben.}
+
+\begin{enumerate}
+	\item
+		\begin{enumerate}
+			\item $(a+b)^n$. Für $\mathbb{B}$ und $\mathbb{N^\infty}$: 1, wenn $|w|=n$ und 0 sonst.
+			\item $(a+b)^*$. Für $\mathbb{B}$ und $\mathbb{N^\infty}$: 1.
+			\item $(\e + a+b)^n$. Für $\mathbb{B}$: 1, wenn $|w|\leq n$ und 0 sonst. Für $\mathbb{N^\infty}$: $n$, wenn $|w|<n$, 1, wenn $|w|=n$ und 0 sonst. Die Koeffizienten $n$ ergeben sich dadurch, dass $\e x = x \e = x$, sodass entsprechende Terme, die $\e$ enthalten, aufsummiert werden können.
+			\item $(\e + a+b)^*$. Für $\mathbb{B}$: 1. Für $\mathbb{N^\infty}$: $\matr{l}{n\\|w|}$ für $|w|\leq n$.
+		\end{enumerate}
+		
+	\item
+		\begin{enumerate}
+			\item $(2a+b)^n$. $2^{|a|}$, wobei $|a|$ die Anzahl multiplikativer Vorkommen von $a$ in einem Wort $w$ ist.
+			\item $(2a+2b)^*$. $2^{|w|}$, wobei $|w|$ die Länge eines Wortes $w$ ist.
+		\end{enumerate}
+	\item
+		Die Koeffizienten dieser Potenzreihen lassen sich mittels des Cauchy-Produktes berechnen, welches der Konkatenation von Worten entspricht.
+		\begin{enumerate}
+			\item $(a+b)^*(a+b)^*$. Für $\mathbb{B}$: 1. Für $\mathbb{N^\infty}$: $|w|+1$.
+			\item $(a+b)^*a(a+b)^*$. Für $\mathbb{B}$: 1. Für $\mathbb{N^\infty}$: $n_a(w)$.
+		\end{enumerate}
+	\item Bei den folgenden zwei Potenzreihen wird das Cauchy-Produkt auf 3 Reihen erweitert und nach dem Muster $(r_1,r_2,r_3,w) = \Sigma_{w_1w_2w_3 = w} (r_1,w_1)(r_2,w_2)(r_3,w_3)$ gebildet.
+		\begin{enumerate}
+			\item $(a+b)^*a(2a+b)^*$. Für $\mathbb{B}$ ergibt der Ausdruck keinen Sinn ($2 \notin \mathbb{B}$). Für $\mathbb{N^\infty}$: $2^{|a|}-1$.
+			\item $(a+b)^*a(2a+2b)^*$. Für $\mathbb{B}$: siehe oben. Für $\mathbb{N^\infty}$: Wenn wir $b$ als 0 und $a$ als 1 interpretieren, ist der Koeffizient eines Wortes $w$ die Dezimalzahl, die durch die ``Binärdarstellung'' ebendieses Wortes kodiert wird.
+		\end{enumerate}
+\end{enumerate}
+
+\setcounter{section}{6}
+
+\section{Berechnen Sie $M^*$ für folgende Matrizen bezüglich der angegebenen Halbringe:}
+
+\begin{enumerate}
+	\item $ M = \matr{l l}{a & b \\ a & b} (\mathbb{B})$ \\
+	
+	Für $M \in A^{n \times n} (n>1)$ lässt sich
+	$M^* = \matr{l l}{
+		A \in A^{1 \times 1} & B \in A^{1 \times (n-1)} \\
+	    C \in A^{(n-1) \times 1} & D \in A^{(n-1) \times (n-1)}
+	}^*$
+	wie folgt berechnen:
+	$M^* = \matr{l l}{
+		\alpha = (A + BD^*C)^* & \beta = \alpha BD^* \\
+		\gamma = \delta CA^* & \delta = (D + CA^*B)^*
+	}$.\\
+	
+	Auf das aktuelle Beispiel angewendet ergibt diese Formel:
+	
+	$M^* = \matr{l l}{
+		\alpha = (a + bb^*a)^* & \beta = \alpha bb^* \\
+		\gamma = \delta aa^* & \delta = (b + aa^*b)^*
+	}$
+	
+	\item $ M = \matr{c c c}{a & b & 0 \\ 0 & a & b \\ b & 0 & a} (\mathbb{B})$ \\
+	
+	Wieder hat das Ergebnis die Form
+	$M^* = \matr{l l l}{\alpha & \beta \\ \gamma & \delta}$.
+	
+	Wie man der Formel in Punkt 1 entnehmen kann, müssen wir $D^*$ und $\delta$ rekursiv berechnen:
+	
+	$\begin{array}{l l}
+	D^* & = \matr{l l}{a & b \\ 0 & a}^* = \matr{l l}{a^* & a^*ba^* \\ 0 & b^*}\\
+	\delta & = (D + \matr{l}{0 \\ b} a^* \matr{l l}{b & 0})^* = (D + \matr{l l}{0 & 0\\ba^*b & 0})^* =
+		\matr{l l}{
+			a & b \\
+			ba^*b & a \\
+		}^*\\
+		& = \matr{l l}{ 
+			\alpha' = (a + ba^*ba^*b)^* &
+			\alpha' ba^*\\
+			\delta' ba^*ba^* &
+			\delta' = \alpha' = (a + ba^*ba^*b)^*\\
+		}\\
+	\end{array}
+	$
+	
+	Nun können wir $\alpha$, $\beta$ und $\gamma$ berechnen:
+	
+	$
+		\begin{array}{l l}
+			\alpha = (a + \matr{l l}{b & 0} D^* \matr{l}{0\\b})^* = (a + ba^*ba^*b)^*\\
+			\beta = \alpha \matr{l l}{b & 0} D^* = \matr{l l}{\alpha ba^* & \alpha ba^*ba^*} \\
+			\gamma = \delta \matr{l}{0\\b} (a^*) =
+				\matr{l}{
+					\alpha' ba^*ba^*\\
+					\alpha' ba^*\\
+						}
+		\end{array}
+	$
+	
+	\item $ M = \matr{c c}{a+b & a \\ 0 & a+b}  (\mathbb{N}^\infty)$\\
+	
+	$M^* = \matr{c c}{
+		(a+b)^* & (a+b)^*a(a+b)^*\\
+		0 & (a+b)^*
+	} =
+	\matr{c c}{
+		\sum\limits_{w \in \{a, b\}^*} 1w & \sum\limits_{w \in \{a,b\}^*} n_a(w)w \\
+		0 & \sum\limits_{w \in \{a,b\}^*} 1w\\
+	}$
+\end{enumerate}
+
+\section{Konstruieren Sie endliche $\mathbb{B}(\Sigma \cup \e)$-Automaten, die die im Beispiel 2 gegebenen regulären Sprachen ``akzeptieren''.}
+
+\begin{enumerate}
+	\item $\{w \in \{ a,b \}^*\ |\ aa \textnormal{ tritt nicht als Teilwort von } w \textnormal{ auf } \}$.\\
+	
+	$A = (n,M,S,P) = \left(2, \matr{l l}{b & a \\ b & 0}, \matr{l l}{1 & 0}, \matr{l}{1\\1}\right)$
+	
+	\item $\{w \in \{ a,b,c \}^*\ |\ n_c(w) \geq 2 \}$.\\
+	
+	$A = (n,M,S,P) = \left(3, \matr{c c c}{a+b & c & 0 \\ 0 & a+b & c \\ 0 & 0 & a+b+c}, \matr{l l l}{1 & 0 & 0}, \matr{l}{0\\0\\1}\right)$
+	
+	\item $\{w \in \{ a,b \}^*\ |\ 3\ |\ n_b(w) \}$.\\
+	
+	$A = (n,M,S,P) = \left(3, \matr{l l l}{a & b & 0 \\ 0 & a & b \\ b & 0 & a}, \matr{l l l}{1 & 0 & 0}, \matr{l}{1\\0\\0}\right)$
+\end{enumerate}
+
+\setcounter{section}{9}
+
+\section{Eliminieren Sie die $\e$-Übergänge des $N^\infty(\{a,b,\e\})$-Automaten $\mathfrak{A} = (Q,M,S,P)$, mit}
+
+$$
+\begin{array}{c c c c}
+	Q = \{1,\dots,5\}, &
+	M = \matr{l l l l l}{
+		0 & \e & 0 & \e & 0\\
+		0 & 0 & a & 0 & 0\\
+		\e & 0 & 0 & 0 & 0\\
+		0 & 0 & 0 & 0 & b\\
+		\e & 0 & 0 & \e & 0\\
+	}, &
+	S = \matr{l l l l l}{\e & 0 & 0 & 0 & 0}, &
+	P = \matr{l}{0\\0\\0\\\e\\0}.
+\end{array}
+$$
+
+Zuerst normalisieren wir den Automaten durch das Hinzufügen eines neuen Start- bzw. Endzustandes und erhalten:
+
+$$
+\begin{array}{c c c c}
+	Q' = \{1,\dots,7\}, &
+	M' = \matr{l l l l l l l}{
+		0 & \e & 0 & 0 & 0 & 0 & 0\\
+		0 & 0 & \e & 0 & \e & 0 & 0\\
+		0 & 0 & 0 & a & 0 & 0 & 0\\
+		0 & \e & 0 & 0 & 0 & 0 & 0\\
+		0 & 0 & 0 & 0 & 0 & b & \e\\
+		0 & \e & 0 & 0 & \e & 0 & 0\\
+		0 & 0 & 0 & 0 & 0 & 0 & 0\\
+	}, &
+	S' = \matr{l l l}{1 & \cdots & 0}, &
+	P' = \matr{l}{0\\0\\0\\0\\0\\0\\1}.
+\end{array}
+$$
+
+Der verhaltensäquivalente $N^\infty(\{a,b\})$-Automat ist gegeben durch\\
+$\mathfrak{A}''=(Q',M'' = {M'_0}^*M'_1, S', P'' = {M'_0}^*P')$.
+%Die Berechnung von ${M'_0}^*$ ließe sich mittels des gewohnten $\alpha\beta\gamma\delta$-Schemas durchführen, aber wir können uns überlegen, dass, wenn nur $\e$ und $0$ in einer Matrix $A \in N^{n \times n}$ vorkommen, folgende Funktion $A^*$ berechnet, wobei $\overline{A}$ der von $A$ induzierte Graph ist:
+%
+%$$
+%\texttt{Star}(A) = \left\{
+%	\begin{array}{l l}
+%	(A^*)_{ii} = 1 & \textnormal{wenn es keinen (nichtleeren) Weg von $i$ nach $i$ in $\overline{A}$ gibt}\\
+%	(A^*)_{ij} = \infty \e & \textnormal{falls $i \neq j$ und es einen Weg von $i$ nach $j$ in $\overline{A}$ gibt}\\
+%	(A^*)_{ij} = 0 & \textnormal{andernfalls}\\
+%	\end{array}
+%\right.
+%$$
+
+Wir erhalten:
+
+$$
+\begin{array}{c c c c}
+	Q'' = \{1,\dots,7\}, &
+	M'' = \matr{l l l l l l l}{
+		0 & 0 & 0 & a & 0 & b & 0\\
+		0 & 0 & 0 & a & 0 & b & 0\\
+		0 & 0 & 0 & a & 0 & 0 & 0\\
+		0 & 0 & 0 & a & 0 & b & 0\\
+		0 & 0 & 0 & 0 & 0 & b & 0\\
+		0 & 0 & 0 & a & 0 & b & 0\\
+		0 & 0 & 0 & 0 & 0 & 0 & 0\\
+	}, &
+	S'' = \matr{l l l}{1 & \cdots & 0}, &
+	P'' = \matr{l}{\e\\\e\\0\\\e\\\e\\2 \e\\1}.
+\end{array}
+$$
+
+\section{Finden Sie einen regulären Ausdruck, der die Sprache $\{w \in \{a,b,c\}\ |\ \textnormal{weder } bc \textnormal{ noch } cb \textnormal{ ist Teilwort von } w \}$}
+
+Ein intuitiver erster Schritt ist eine Fallunterscheidung danach, ob ein Wort $w$ $a$ enthält.
+
+Enthält es keines, muss $w$ ausschließlich aus $b$ oder ausschließlich aus $c$ bestehen --- wir erhalten den Ausdruck $(b^* + c^*)$.
+
+Enthält $w$ $a$, dürfen auch $b$ und $c$ auftreten, ihre Vorkommen müssen aber durch $a$ voneinander "isoliert" werden. Dies führt zur Überlegung, $w$ als Folge von Abschnitten $X\dots X$ zu sehen, wobei jeder Abschnitt die Form $a^+b^*$ oder $a^+c^*$ hat. Das alleine wäre aber noch nicht ganz richtig, denn es sind natürlich auch $b$ und $c$ am Wortanfang erlaubt --- der korrekte Ausdruck ist also: $(b^* + c^*)(a^+b^* + a^+c^*)^*$. Wie man sehen kann, subsumiert der zweite Fall den ersten und ist damit die endgültige Lösung:
+
+$$(b^* + c^*)(a^+b^* + a^+c^*)^*$$
+
+
+\setcounter{section}{11}
+
+\section{Gegeben sind folgende (Sprach)Gleichungssysteme (genauer: $\{ \{w\}\ |\ w \in \{a,b\}^* \}$-algebraische Systeme) bei Zugrundelegung des Halbrings $\mathbb{B}(\Sigma^*)$. Bestimmen Sie die (bezüglich der Mengeninklusion) kleinsten Lösungen dieser Systeme.}
+
+\begin{enumerate}
+	\item $L = \{\epsilon\} \cup \{a\}L\{b\}$\\
+	Wir bilden die Approximationsfolge $^0, \sigma^1, \dots$:\\
+	$
+		\begin{array}{l}
+		\sigma^0 = \{\}\\
+		\sigma^1 = \{\epsilon\}\\
+		\sigma^2 = \{ab, \epsilon\}\\
+		\sigma^3 = \{aabb, \epsilon\}\\
+		\dots
+		\end{array}
+	$\\
+	
+	Der Fixpunkt $\sigma$ ist das Supremum $\bigcup_{i \geq 0} \sigma^i$, dessen Existenz gesichert ist, da der Halbring vollständig partiell geordnet ist. Wir können leicht sehen, dass $\sigma = \{a^nb^n\ |\ n \geq 0\}$. Die zu diesem Gleichungsystem gehörende Grammatik ist $G_1 = \grammar{\{L\}}{\{a,b\}}{L}{\{\grule{L}{\epsilon+aLb}\}}$ und $\sigma = \mathcal{L}(G_1)$.
+	
+	\item $
+		\begin{array}{l}
+		L_1 = L_2L_2\\
+		L_2 = L_1L_1\\
+		\end{array}
+	$\\
+	
+	Wir können die Bekic-Regel anwenden, um dieses System zu lösen. Die zweite Gleichung ist bereits nach $L_2$ gelöst und wir setzen $L_1L_1$ für $L_2$ in der ersten ein:
+	$$
+		L_1 = L_1L_1L_1L_1
+	$$
+	
+	Die kleinste Fixpunkt \& die einzige Lösung dieser Gleichung ist $L_1=0=\{\}$ --- dies ist die erste Komponente der Lösung. Setzen wir $L_1 = \{\}$ in der zweiten Gleichung ein, erhalten $L_2 = \{\}\{\} = \{\}$ --- die zweite Komponente der Lösung. Es ist nicht überraschend, dass die einzige Lösung dieses Systems $(\{\},\{\})$ ist. Die dazugehörige Grammatik ist $\grammar{\{L_1,L_2\}}{\{a,b\}}{L_1}{\{\grule{L_1}{L_2L_2}\}, \grule{L_2}{L_1L_1}\}}$ und sie erzeugt keine Worte. Wir könnten auch jede andere nehmen, die die leere Sprache erzeugt --- so z.B.: $\grammar{\{S\}}{\{\}}{S}{\{\}}$.
+	
+	\item $
+			\begin{array}{l}
+			L_1 = \{a\}L_2 \cup \epsilon\\
+			L_2 = \{a\}L_3\\
+			L_3 = \{a\}L_1\\
+			\end{array}
+		$\\
+		
+	Wir können auf die Idee der Approximationsfolge aus dem ersten Punkt zurückgreifen, um die drei Komponenten der Lösung eine nach der anderen rauszufinden. Zuerst setzen wir die rechten Seiten von $L_2$ und $L_3$ in die erste Gleichung ein:
+	$$
+		\begin{array}{l}
+		L_1 = \{a\}L_2 \cup \epsilon\\
+		L_1 = \{a\}\{a\}L_3 \cup \epsilon\\
+		L_1 = \{a\}\{a\}\{a\}L_1 \cup \epsilon\\
+		\end{array}
+	$$
+	
+	Wenn wir die Approximationsfolge bilden, sehen wir, dass $\sigma_1 = \{a^{3n}\ |\ n \geq 0\}$.  Wir setzen nun auch in der zweite Gleichung ein und erhalten
+	$$
+		\begin{array}{l}
+		L_2 = \{a\}L_3\\
+		L_2 = \{a\}\{a\}L_1\\
+		L_2 = \{a\}\{a\}(\{a\}L_2 \cup \epsilon) = \{aaa\}L_2 \cup \{aa\}\\
+		\end{array}
+	$$
+	
+	Die Approximationsfolge hier ist $\sigma^0 = \{\}, \sigma^1 = \{aa\}, \sigma^2 = \{a^5, aa\}, \dots$ und wir sehen, dass $\sigma_2 = \{a^{3n+2}\ |\ n \geq 0\}$. Mit der dritten Gleichung verfahren wir analog und erhalten $\sigma_3 = \{a^{3n+1}\ |\ n \geq 0\}$. Die Lösung des Gleichungssystems ist $(\sigma_1,\sigma_2,\sigma_3)$; die dazugehörige Grammatik ist $\grammar{\{L_1,L_2,L_3\}}{\{a,b\}}{L_1}{\{\grule{L_1}{aL2 + \epsilon}\}, \grule{L_2}{aL_3}, \grule{L_3}{aL_1}\}}$.
+	
+	\medskip
+	
+	Die Lösungen im ersten und dritten Beispiel sind die einzigen. Beim zweiten Beispiel existiert neben $(\{\},\{\}) = (0,0)$ auch noch die Lösung $(\{\epsilon\},\{\epsilon\}) = (1,1)$, da $\epsilon$ das neutrale Element der Konkatenation ist.
+	
+
+\end{enumerate}
+
+\setcounter{section}{13}
+
+\section{Finden Sie ein $\mathbb{N}^\infty(\{a,b,c\})$-algebraisches System, in dem die Potenzreihe $\Sigma_{n,m \geq 0} |n-m|a^nb^m$ als erste Komponente der kleinsten Lösung auftritt.}
+
+Betrachten wir das Problem als eines von Grammatiken, böte sich folgende Lösung an: vom Startsymbol $S$ ausgehend erstellen wir auf genau eine Weise das Wort $a^mSb^m$. Danach ersetzen wir das $S$ durch einen String $aa\dots a$ aus $a^+$, wobei wir an genau einer Stelle in diesem String eine Wahl treffen können. Bei einer Länge $p$ entspricht dies $p$ möglichen Stellen, sodass das Wort $a^ma^pb^m$ auf genau $p$ Arten abgeleitet werden kann. Da $p = n - m$, wäre das die korrekte Lösung. Als Grammatik:
+
+$$
+	G = \grammar{\{S,X\}}{\{a,b,c\}}{\{S\}}{\{\grule{S}{aSb + aS + X}, \grule{X}{aX + a}\}}
+$$
+
+Die Wahl ist mit Hilfe des Nonterminals $X$ realisiert: wir müssen genau einmal von $S$ zu $X$ wechseln, um den ``Überschuss'' an $a$ zu produzieren, können dies aber an beliebiger Stelle tun. Wir können $G$ als Gleichungssystem ausdrücken:
+
+$$
+	\begin{array}{l}
+	S = \{a\}S\{b\} \cup \{a\}S \cup X\\
+	X = \{a\}X \cup a
+	\end{array}
+$$
+
+Wir können die Approximationsfolge bilden, um zu sehen, dass die erste Komponente dieses Systems tatsächlich die gewünschte Sprache ist. Die zweite Gleichung lässt sich leicht lösen und wir erhalten
+$$
+X = a^+
+$$
+Jetzt setzen wir diese Lösung in die erste Gleichung ein:
+$$
+	S = \{a\}S\{b\} \cup \{a\}S \cup a^+\\
+$$
+
+Von dieser können wir die Approxmationsfolge bilden. Zuerst definieren wir einige Kurzformen:
+
+	\begin{itemize}
+		\item Die Multiplikation jedes Elements einer Menge mit einem Koeffizienten:
+		$$
+			m \in \mathbb{N}^\infty; X \subseteq \Sigma^* \Rightarrow mX \equiv \{mx\ |\ x \in X\}
+		$$
+		
+		\item Alle Worte ab mit eine Länge zwischen $n$ und $p$:
+		$$
+			a^{[n,p]} = \{ x\ |\ x \in a^*, n \leq n(x) \leq p \}
+		$$
+	\end{itemize}
+	
+	Wollen wir nur eine Untergrenze festlegen, schreiben wir auch $a^{n+}$. Interessiert uns nur eine Obergrenze, schreiben wir $a^{n-}$. Es gilt (ohne Beweis, aber leicht nachzurechnen):
+	$$
+		\begin{array}{l}
+		mXa^{(n+k)^+}Y + pXa^{n^+} = pa^{[n+k-1]} + (m+p)Xa^{(n+1)^+}Y\\
+		
+			\begin{array}{l l}
+			\mt{wobei} & n,k \in \mathbb{N}\\
+				       & m,p \in \mathbb{N}^\infty\\
+				       & a \in \Sigma\\
+				       & X,Y \subseteq \Sigma^*\\
+			\end{array}
+		\end{array}
+	$$
+	
+Nun können wir $\sigma^0, \sigma_1,\dots$ berechnen:
+	   
+	$$
+		\begin{array}{l}
+			\sigma^0 = \{\}\\
+			\sigma^1 = a^+\\
+			\sigma^2 = a^{2^+}b + 2a^{2^+} + a\\
+			\sigma^3 = 3a^{3^+} + 2a^{2^+} + a + 3a^{3^+}b + a^2b + a^{3^+}b^2\\
+			\dots
+		\end{array}
+	$$
+
+\setcounter{section}{17}
+
+\section{Stellen Sie die folgenden Kellerautomaten graphisch dar und bestimmen Sie deren Verhalten bezüglich $\mathbb{B}$ und $\mathbb{N}^\infty$ (es sind jeweils nur die von 0 verschiedenen Blöcke der Übergangsmatrizen anzugeben):}
+
+\begin{enumerate}
+	\item $
+		\mathfrak{P} = (\{q_0,q_1,q_2\}, \{p\}, M, \matr{l l l}{\epsilon & 0 & 0}, p, \matr{l}{0\\0\\ \epsilon})
+	$, mit \\
+	
+	$$
+		A = M_{p,\epsilon} = \matr{l l l}{0 & 0 & 0\\
+										  0 & 0 & 0\\
+										  0 & 0 & b}, 
+\quad
+		B = M_{p,p} = \matr{l l l}{0 & a & 0\\
+								   0 & 0 & \epsilon\\
+								   0 & 0 & 0}, 
+\quad
+		C = M_{p,p^2} = \matr{l l l}{a & 0 & 0\\
+								    0 & a & 0\\
+								    0 & 0 & 0}, 
+	$$
+	
+	Der Automat kann wie folgt dargestellt werden:
+	
+	\begin{figure}[h]
+		\centering
+		\includegraphics[width=500pt]{18_1.png}
+		\caption{Automat \#1}
+	\end{figure}
+	 
+	
+	
+	Sein Verhalten ist definiert als
+	
+	$$
+		||\mathfrak{P}|| = S (M^*)_{p,\epsilon} P\mt{, wobei } M \in {((A')^{Q \times Q})}^{\Gamma^* \times \Gamma^*}.
+	$$
+	
+	Jeder Eintrag in $M$ ist ein Element aus $\{0, A, B, C\}$ und die Zeilen \& Spalten von $M$ sind die möglichen Kellerinhalte $\epsilon, p, p^2, p^3, p^4, \dots$. $M$ hat folgende Form:
+	
+	$$
+		M = \matr{l l l l l l}{0 & 0 & 0 & 0 & 0 & \\
+							   A & B & C & 0 & 0 & \dots\\
+							   0 & A & B & C & 0 & \\
+							   0 & 0 & A & B & C & \\
+							     &   & \vdots & & & \ddots}
+	$$
+	
+	Wir sind am Eintrag $(M^*)_{1,0}$ interessiert. Man kann, wenn man die graphische Darstellung betrachtet, leicht Folgendes sehen: befindet man sich im Kellerzustand $p^i$ und will man in den Kellerzustand $p^j$ gelangen, so muss man $r$ mal ``nach rechts'' und $l$ mal ``nach links'' gehen, sodass $r-l = j - i$. ``Nach rechts'' entspricht dem Element $C$, ``nach links'' dem Element $A$. Bei jedem dieser Schritte darf man natürlich beliebig lange an Ort und Stelle verharren --- dies entspricht dem Diagonalelement $B$. Mittels dieser Überlegungen kommen wir zu folgender Formel für die Elemente von $M^*$:
+	
+	$$
+		(M^*)_{i,j} = B^*\ \{ (CB^*)^r(AB^*)^l\ |\ r,l \geq 0, r-l = j-i  \}
+	$$
+	
+	Spezialisieren wir diese Formel auf $(M^*)_{1,0}$, erhalten wir:
+	
+	$$
+		(M^*)_{1,0} = B^*\ \{ (CB^*)^n(AB^*)^{n+1}\ |\ n \geq 0 \}
+	$$
+	
+	Wir rechnen nun eine Reihe von Sternbildungen und Matrixmultiplikationen aus:
+	
+	$$
+		\begin{array}{l l l}
+			B^* & = & \matr{l l l}{1 & a & a\\
+							   0 & 1 & 1\\
+							   0 & 0 & 1}\\
+%
+			CB^* & = & D = \matr{l l l}{a & a^2 & a^2\\
+							    0 & a & a\\
+							    0 & 0 & 0}\\
+			AB^* & = & A\\
+		    A^{n+1} & = & \matr{l l l}{0 & 0 & 0\\
+								 0 & 0 & 0\\
+								 0 & 0 & b^{n+1}}
+		\end{array}
+	$$
+	
+	Die Berechnung von $D^n$ gestaltet sich etwas trickreicher. Wir gehen induktiv vor:
+	
+	\begin{enumerate}
+		\item Basisfall:
+		$$
+			D = \matr{l l l}{a & a^2 & a^2\\
+	    					 0 & a & a\\
+	    					 0 & 0 & 0}\\
+		$$
+		\item Induktionsschritt: angenommen
+		$$
+			D^n = \matr{l l l}{a^n & na^{n+1} & na^{n+1}\\
+	    					   0 & a^n & a^n\\
+	    					   0 & 0 & 0}\\
+		$$Dann:
+		$$
+			D^nD = \matr{l l l}{a^{n+1} & (n+1)a^{n+2} & na^{n+2}\\
+	    		 			    0 & a^{n+1} & a^{n+1}\\
+	    	  				    0 & 0 & 0}\\
+		$$
+	\end{enumerate}
+	
+	Wir multiplizieren mir $A^{n+1}$ und $B^*$:
+	
+	$$
+			D^nA^{n+1} = \matr{l l l}{0 & 0 & na^{n+1}b^{n+1}\\
+							       0   & 0  & a^nb^{n+1}\\
+							   	   0   & 0    & 0}\\
+	$$
+	$$
+			B^*D^nA^{n+1} = \matr{l l l}{0 & 0 & (n+1)a^{n+1}b^{n+1}\\
+							       0   & 0  & a^nb^{n+1}\\
+							   	   0   & 0    & 0}\\
+	$$
+	
+	Selbstverständlich entsteht für jedes $n$ solch eine Matrix. Addieren wir sie alle elementweise, erhalten wir, was wir uns gewünscht hatten: $(M^*)_{1,0}$. Zu guter Letzt multiplizieren wir noch mit $S$ und $P$, um das Verhalten zu erhalten. Wir können leicht sehen, dass es sich dabei um diese Summe handelt (in $\mathbb{N}^\infty$. In $\mathbb{B}$ sind die Koeffizienten 1):
+	
+	$$
+		\sum\limits_{n \geq 0} (n+1)(a^{n+1}b^{n+1}) = \sum\limits_{n \geq 1} (na^{n}b^{n})
+	$$
+	
+	\item $
+			\mathfrak{P} = (\{q_0,q_1\}, \{p\}, M, \matr{l l}{\epsilon & 0}, p, \matr{l}{0\\\epsilon})
+		$, mit
+
+		$$
+			A = M_{p,\epsilon} = \matr{l l}{0 & b\\
+											  0 & a}, 
+	\quad
+			B = M_{p,p^2} = \matr{l l}{a & 0\\
+									   0 & 0}, 
+	\quad
+			C = M_{p,p^3} = \matr{l l}{a & 0\\
+									    0 & 0}, 
+		$$
+		
+		\begin{figure}[h]
+			\centering
+			\includegraphics[width=500pt]{18_2.png}
+			\caption{Automat \#2}
+			\label{aut2}
+		\end{figure}
+		
+		\newpage
+		
+		Wir bilden erneut $M$:
+		
+	$$
+		M = \matr{l l l l l l l}{0 & 0 & 0 & 0 & 0 & 0 & \\
+							   A & 0 & B & C & 0 & 0 & \dots\\
+							   0 & A & 0 & B & C & 0 & \\
+							   0 & 0 & A & 0 & B & C & \\
+							     &   & \vdots & & & & \ddots}
+	$$
+		
+	Informell können wir aus der Betrachtung der Abbildung~\ref{aut2} und aus $M$ Folgendes ablesen: im Zustand $p$ beginnend können wir über $B$ ``einfache'' ($p^n \rightarrow p^{n+1}$) oder über $C$ ``doppelte'' ($p^n \rightarrow p^{n+2}$) Sprünge machen. An irgendeinem Punkt müssen wir ein $b$ einlesen, und danach bleibt nur noch der Weg über $A$ in den $\epsilon$-Zustand. Achten wir zunächst nicht auf die Koeffizienten, lässt sich die Menge der akzeptierten Worte so beschreiben:
+	$$
+		\{a^nba^m \ |\ 0\leq m \leq 2n \leq 2m \}
+	$$
+	
+	Um $(M^*)_{1,0}$ zu ermitteln, betrachten wir erneut die Pfade, die wir gehen können, sortiert nach der Anzahl der enthaltenen $A$:
+	
+	\begin{enumerate}
+		\item $A$
+		\item $BA^2$
+		\item $B^2A, CA^3$
+		\item $B^3A^4, CBA^4, BCA^4$
+		\item $B^4A^5, B^2CA^5, CB^2A^5, BCBA^5, C^2A5$
+		\item $B^5A^6, B^3CA^6, B^2CBA^6, \dots$
+		\item $\dots$
+	\end{enumerate}
+	
+	Jedes dieser Worte induziert eindeutig ein Wort $a^nba^m$: $B$ entspricht einem $a$ und $C$ entspricht zweien. Nehmen wir ebendiese Wörter und summieren sie zeilenweise, erhalten wir:
+	
+	\begin{enumerate}
+		\item $1a$
+		\item $1aba$
+		\item $1a^2ba^2, 1aba^2$
+		\item $1a^3ba^3, 2a^2ba^3$
+		\item $1a^4ba^5, 3a^3ba^5, 1a^2ba^5$
+		\item $1a^5ba^6, 4a^4ba^6, 3a^3ba^6$
+		\item $1a^7ba^7, 5a^6ba^7, 6a^5ba^7, 1a^4ba^7$
+		\item $\dots$
+	\end{enumerate}
+	
+	
+	Wir richten unser Augenmerk auf die Koeffizienten. Schreiben wir nur sie auf, erhalten wir:
+	
+	$$
+	\begin{array}{l l l l l l l l l}
+		  &   &   &   &   &   &   & 1\\
+		  &   &   &   &   &   & 1 & \\
+		  &   &   &   &   & 1 &   & 1\\
+		  &   &   &   & 1 &   & 2 &  \\
+		  &   &   & 1 &   & 3 &   & 1\\
+		  &   & 1 &   & 4 &   & 3 & \\
+		  & 1 &   & 5 &   & 6 &   & 1\\
+	\end{array}
+	$$
+	
+	Tatsächlich handelt es sich hierbei Pascalsches Dreieck. Der Grund dafür ist klar: das erste $a$-Segment eines Wortes $a^nb^m$ wird durch eine Kombination von $B$ und $C$ generiert, deren Anordnung wir frei wählen können.
+	%Das Dreieck ist abgeschnitten, weil $n$ von unten durch $m$ begrenzt ist: auch, wenn $a^n$ nur durch $C$ generiert wird, gilt $n \geq \mt{ceil}(m/2)$.
+	$(M^*)_{1,0}$ erhalten wir, indem wir über alle Pfade summieren:
+	
+	$$
+		(M^*)_{1,0} =
+			\matr{l l}{0 & \sum\limits_{0 \leq m \leq 2n \leq 2m }  \left( \choose{n}{m-n} a^nba^m\ \right)\\
+					   0 & 0}
+	$$
+	
+	Multiplizieren wir mit $S$ und $P$, erhalten wir (in $\mathbb{N}^\infty$. Für $\mathbb{B}$ sind die Koeffizienten 1):
+	
+	$$
+	\sum\limits_{0 \leq m \leq 2n \leq 2m }  \left( \choose{n}{m-n} a^nba^m\ \right)
+	$$
+	
+	\newpage
+	
+	
+	\item $
+			\mathfrak{P} = (\{q_0\}, \{p,A,B\}, M, \matr{l}{\epsilon}, p, \matr{l}{\epsilon})
+		$, mit
+		
+		$$
+			M_{p,\epsilon} = a + b + \epsilon, 
+	\quad
+			M_{A,\epsilon} = M_{p,pA} = a, 
+	\quad
+			M_{B,\epsilon} = M_{p,pB} = b
+		$$
+		
+		\begin{figure}[!]
+		    \centering
+		    \includegraphics[width=200pt]{18_3.png}
+		    \caption{Automat \#3}
+		    \label{aut3}
+		\end{figure}
+		
+		Der Automat ist in Abbildung~\ref{aut3} dargestellt. Er hat nur einen einzigen Zustand, jedoch drei verschiedene Kellersymbole ($p$, $A$ und $B$). Anstatt alle möglichen Kellerinhalte aufzuzeichnen, benutzen wir hier eine kürzere Notation: auf dem Zustandsübergang sind neben dem eingelesenen Symbol auch das vom Keller genommene und das raufgelegte Wort angeführt. 
+		
+		Wir ermitteln das Verhalten intuitiv: $M_{p,pA}$ besagt, dass man ein $a$ lesen und $A$ auf den Keller legen kann, wobei $p$ das oberste Symbol bleibt; $M_{p,pB}$ besagt Analoges für $b$ \& $B$. Nach dem Einlesen einer beliebiger Anzahl $a$ und $b$ sieht der Keller z.b. so aus:
+		
+		$$
+			\mt{oberstes Element} \rightarrow pABAABBABBABABB
+		$$
+		Jetzt muss man genau einmal $M_{p, \epsilon}$ anwenden, um das oberste $p$ zu entfernen. Danach verbleiben noch eine Reihe $A$ und $B$, die man mittels $M_{A, \epsilon}$ und $M_{B, \epsilon}$ entfernen muss. Man beachte: $M_{A,\epsilon}$ und $M_{B,\epsilon}$ müssen in genau umgekehrter Reihenfolge angewendet werden, wie $M_{p,pA}$ und $M_{p,pB}$. D.h., wir müssen die jetzt das gleiche Teilwort einlesen, wie vorhin, nur in umgekehrter Reihenfolge --- der Automat beschreibt alle Palindrome in $\{a,b\}$:
+		
+		$$
+			\sum\limits_{n \geq 0} w (a+b+\epsilon) w^r
+		$$
+	
+\end{enumerate}
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
